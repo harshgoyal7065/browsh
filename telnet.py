@@ -1,3 +1,4 @@
+#This is our own implementation of `telnet` to parse the requests on the browser and return its response
 import socket
 
 class URL:
@@ -10,16 +11,25 @@ class URL:
         self.path = "/" + url
 
     def request(self):
+        # Creating a socket connection
         s = socket.socket(
             family=socket.AF_INET,
             type=socket.SOCK_STREAM,
             proto=socket.IPPROTO_TCP,
-        )
-        s.connect((self.host, 80))
-        request = "GET {} HTTP/1.0\r\n".format(self.path)
+        ) # Creating a socket to connect with other computers
+        s.connect((self.host, 80)) # Connecting to the host on Port 80 (host is the site we want to communicate, eg- google.com)
+
+        # Requesting the data. Next 3 lines is equivalent to
+        # GET /index.html HTTP/1.0
+        # Host: example.org
+        #
+        # This is how we get the index.html content in telnet, we are doing something very similar here.
+        request = "GET {} HTTP/1.0\r\n".format(self.path) #\r - Carriage return, takes the pointer to the first character
         request += "Host: {}\r\n".format(self.host)
         request += "\r\n"
+        # Send the Created Command
         s.send(request.encode("utf8"))
+        # Read the response received and create a file out of it
         response = s.makefile("r", encoding="utf8", newline="\r\n")
         statusline = response.readline()
         version, status, explanation = statusline.split(" ", 2)
@@ -36,6 +46,20 @@ class URL:
         return content
 
 
+def show(body):
+    in_tag = False
+    for c in body:
+        if c == "<":
+            in_tag = True
+        elif c == ">":
+            in_tag = False
+        elif not in_tag:
+            print(c, end="")
 
+def load(url):
+    body = url.request()
+    show(body)
 
-
+if __name__ == "__main__":
+    import sys
+    load(URL(sys.argv[1]))
