@@ -1,6 +1,8 @@
 #This is our own implementation of `telnet` to parse the requests on the browser and return its response
 import socket
 import ssl
+import tkinter
+import sys
 
 class URL:
     def __init__(self, url):
@@ -64,8 +66,10 @@ class URL:
         s.close()
         return content
 
+WIDTH, HEIGHT = 800, 600
 
-def show(body):
+def lex(body):
+    text = ""
     in_tag = False
     for c in body:
         if c == "<":
@@ -73,12 +77,30 @@ def show(body):
         elif c == ">":
             in_tag = False
         elif not in_tag:
-            print(c, end="")
+            text += c
+    return text
+class Browser:
+    def __init__(self):
+        self.window = tkinter.Tk()
+        self.canvas = tkinter.Canvas(
+            self.window,
+            width=WIDTH,
+            height=HEIGHT
+        )
+        self.canvas.pack()
 
-def load(url):
-    body = url.request()
-    show(body)
+    def load(self, url):
+        body = url.request()
+        text = lex(body)
+        HSTEP, VSTEP = 13, 18
+        cursor_x, cursor_y = HSTEP, VSTEP
+        for c in text:
+            self.canvas.create_text(cursor_x, cursor_y, text=c)
+            cursor_x += HSTEP
+            if cursor_x >= WIDTH - HSTEP:
+                cursor_y += VSTEP
+                cursor_x = HSTEP
 
 if __name__ == "__main__":
-    import sys
-    load(URL(sys.argv[1]))
+    Browser().load(URL(sys.argv[1]))
+    tkinter.mainloop()
